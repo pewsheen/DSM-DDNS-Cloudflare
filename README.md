@@ -4,6 +4,9 @@
 
 The is a script to be used to add [Cloudflare](https://www.cloudflare.com/) as a DDNS to [Synology](https://www.synology.com/) NAS. The script used an updated API, Cloudflare API v4.
 
+## Tested DSM Version
+- DSM 7.3
+
 ## How to use
 
 ### Access Synology via SSH
