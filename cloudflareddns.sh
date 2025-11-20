@@ -26,7 +26,7 @@ recordProx=$(echo "$res" | jq -r ".result[0].proxied")
 createDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records"
 
 # API-Calls for update DNS-Entries
-updateDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records/${recordId}" # for IPv4 or if provided IPv6
+updateDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records/${recordId}"
 
 if [[ $recordIp = "$ipAddr" ]]; then
     echo "nochg";
