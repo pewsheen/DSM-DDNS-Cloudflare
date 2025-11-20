@@ -1,5 +1,7 @@
 # Synology Cloudflare DDNS Script 📜
 
+**This is modified for my personal usage, which supports only IPv4 (A Record)**
+
 The is a script to be used to add [Cloudflare](https://www.cloudflare.com/) as a DDNS to [Synology](https://www.synology.com/) NAS. The script used an updated API, Cloudflare API v4.
 
 ## How to use
