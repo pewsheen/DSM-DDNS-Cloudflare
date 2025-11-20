@@ -24,7 +24,7 @@ It is not a must, you can put I whatever you want. If you put the script in othe
 2. Give others execute permission
 
 ```
-chmod +x /sbin/cloudflareddns.sh
+chmod 755 /usr/syno/bin/ddns/cloudflareddns.sh
 ```
 
 3. Add `cloudflareddns.sh` to Synology
@@ -37,8 +37,6 @@ cat >> /etc.defaults/ddns_provider.conf << 'EOF'
         website=https://www.cloudflare.com
 EOF
 ```
-
-`queryurl` does not matter because we are going to use our script but it is needed.
 
 ### Get Cloudflare parameters
 
