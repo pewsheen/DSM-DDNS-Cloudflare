@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e;
+set -e
 
 # DSM Config
 username="$1" # Zone ID
@@ -14,8 +14,8 @@ res=$(curl -s -X GET "$listDnsApi" -H "Authorization: Bearer $password" -H "Cont
 resSuccess=$(echo "$res" | jq -r ".success")
 
 if [[ $resSuccess != "true" ]]; then
-    echo "badparam";
-    exit 1;
+	echo "badparam"
+	exit 1
 fi
 
 recordId=$(echo "$res" | jq -r ".result[0].id")
@@ -29,23 +29,23 @@ createDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records
 updateDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records/${recordId}"
 
 if [[ $recordIp = "$ipAddr" ]]; then
-    echo "nochg";
-    exit 0;
+	echo "nochg"
+	exit 0
 fi
 
 if [[ $recordId = "null" ]]; then
-    # Record not exists, create it
-    res=$(curl -s -X POST "$createDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":false}")
+	# Record not exists, create it
+	res=$(curl -s -X POST "$createDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":false}")
 else
-    # Record exists, overwrite it
-    res=$(curl -s -X PUT "$updateDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":$recordProx}")
+	# Record exists, overwrite it
+	res=$(curl -s -X PUT "$updateDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":$recordProx}")
 fi
 resSuccess=$(echo "$res" | jq -r ".success")
 
 if [[ $resSuccess = "true" ]]; then
-    echo "good";
-	exit 0;
+	echo "good"
+	exit 0
 else
-    echo "badparam";
-	exit 1;
+	echo "badparam"
+	exit 1
 fi
