@@ -7,18 +7,14 @@ password="$2" # API Token
 hostname="$3" # www.example.com
 ipAddr="$4"   # IPv4 Address
 
-# Cloudflare Config
-proxy="false" # Used when creating new record.
-recordType="A";
-
 # Cloudflare API-Calls for listing entries
-listDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records?type=${recordType}&name=${hostname}"
+listDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records?type=A&name=${hostname}"
 
 res=$(curl -s -X GET "$listDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json")
 resSuccess=$(echo "$res" | jq -r ".success")
 
 if [[ $resSuccess != "true" ]]; then
-    echo "Failed to fetch DNS list.";
+    echo "badparam";
     exit 1;
 fi
 
@@ -33,23 +29,23 @@ createDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records
 updateDnsApi="https://api.cloudflare.com/client/v4/zones/${username}/dns_records/${recordId}" # for IPv4 or if provided IPv6
 
 if [[ $recordIp = "$ipAddr" ]]; then
-    echo "debug: ip no change";
+    echo "nochg";
     exit 0;
 fi
 
 if [[ $recordId = "null" ]]; then
     # Record not exists, create it
-    res=$(curl -s -X POST "$createDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"$recordType\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":$proxy}")
+    res=$(curl -s -X POST "$createDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":false}")
 else
     # Record exists, overwrite it
-    res=$(curl -s -X PUT "$updateDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"$recordType\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":$recordProx}")
+    res=$(curl -s -X PUT "$updateDnsApi" -H "Authorization: Bearer $password" -H "Content-Type:application/json" --data "{\"type\":\"A\",\"name\":\"$hostname\",\"content\":\"$ipAddr\",\"proxied\":$recordProx}")
 fi
 resSuccess=$(echo "$res" | jq -r ".success")
 
 if [[ $resSuccess = "true" ]]; then
-    echo "DNS update successful.";
+    echo "good";
 	exit 0;
 else
-    echo "Failed to update DNS record.";
+    echo "badparam";
 	exit 1;
 fi
