@@ -2,62 +2,71 @@
 
 **This is modified for my personal usage, which supports only IPv4 (A Record)**
 
-The is a script to be used to add [Cloudflare](https://www.cloudflare.com/) as a DDNS to [Synology](https://www.synology.com/) NAS. The script used an updated API, Cloudflare API v4.
+A script to add [Cloudflare](https://www.cloudflare.com/) as a DDNS provider on
+a [Synology](https://www.synology.com/) NAS, using the Cloudflare API v4.
+
+DSM updates wipe custom DDNS scripts (`/usr/syno/bin/ddns/`) and provider
+entries (`/etc.defaults/ddns_provider.conf`). `install.sh` restores both in one
+idempotent run and can be hooked to a boot-up scheduled task so this happens
+automatically after every update.
 
 ## Tested DSM Version
+
 - DSM 7.3.1-86003 Update 1
 
-## How to use
+## Install
 
-### Access Synology via SSH
+1. Log in to your DSM, go to Control Panel > Terminal & SNMP > Enable SSH
+   service, and connect with an administrator account.
 
-1. Login to your DSM
-2. Go to Control Panel > Terminal & SNMP > Enable SSH service
-3. Use your client to access Synology via SSH.
-4. Use your Synology admin account to connect.
+   **DISABLE SSH SERVICE AFTER SETUP! IT'S DANGEROUS TO EXPOSE SSH ACCESS**
 
-**DISABLE SSH SERVICE AFTER SETUP! IT'S DANGEROUS TO EXPOSE SSH ACCESS**
+2. Download and run the installer:
 
-### Run commands in Synology
+   ```
+   wget https://raw.githubusercontent.com/pewsheen/DSM-DDNS-Cloudflare/refs/heads/master/install.sh -O /tmp/ddns-install.sh
+   sudo bash /tmp/ddns-install.sh
+   ```
 
-1. Download `cloudflareddns.sh` from this repository to `/sbin/cloudflareddns.sh`
+   The installer is idempotent — re-running it never duplicates anything. It:
 
-```
-wget https://raw.githubusercontent.com/pewsheen/DSM-DDNS-Cloudflare/refs/heads/master/cloudflareddns.sh -O /usr/syno/bin/ddns/cloudflareddns.sh
-```
+   - installs the embedded DDNS script to `/usr/syno/bin/ddns/cloudflareddns.sh` (skipped if already current)
+   - adds the `[Cloudflare]` entry to `/etc.defaults/ddns_provider.conf` (skipped if already present)
+   - copies itself to `/usr/local/etc/ddns-cloudflare/install.sh`, which survives DSM updates
 
-It is not a must, you can put I whatever you want. If you put the script in other name or path, make sure you use the right path.
+3. (Recommended) Make it survive DSM updates automatically: go to Control
+   Panel > Task Scheduler > Create > Triggered Task > User-defined script:
 
-2. Give others execute permission
+   - User: `root`
+   - Event: `Boot-up`
+   - Command: `bash /usr/local/etc/ddns-cloudflare/install.sh`
 
-```
-chmod 755 /usr/syno/bin/ddns/cloudflareddns.sh
-```
+   Scheduled tasks survive DSM updates, so after every update + reboot the
+   script and provider entry are restored before you notice they were gone.
 
-3. Add `cloudflareddns.sh` to Synology
+## Get Cloudflare parameters
 
-```
-cat >> /etc.defaults/ddns_provider.conf << 'EOF'
-[Cloudflare]
-        modulepath=/sbin/cloudflareddns.sh
-        queryurl=https://www.cloudflare.com
-        website=https://www.cloudflare.com
-EOF
-```
+1. Go to your domain overview page and copy your Zone ID.
+2. Go to your profile > **API Tokens** > **Create Token** with the permission
+   `Zone > DNS > Edit`, and copy the API token.
 
-### Get Cloudflare parameters
+## Set up DDNS in DSM
 
-1. Go to your domain overview page and copy your zone ID.
-2. Go to your profile > **API Tokens** > **Create Token**. It should have the permissions of `Zone > DNS > Edit`. Copy the api token.
-
-### Setup DDNS
-
-1. Login to your DSM
-2. Go to Control Panel > External Access > DDNS > Add
-3. Enter the following:
+1. Go to Control Panel > External Access > DDNS > Add
+2. Enter the following:
    - Service provider: `Cloudflare`
    - Hostname: `www.example.com`
    - Username/Email: `<Zone ID>`
    - Password Key: `<API Token>`
-  
+
+Credentials entered here are stored in `/etc/ddns.conf`, which survives DSM
+updates — you never need to re-enter them.
+
 **DISABLE SSH SERVICE AFTER SETUP! IT'S DANGEROUS TO EXPOSE SSH ACCESS**
+
+## Development
+
+- `cloudflareddns.sh` is the source of truth for the DDNS script; `install.sh`
+  embeds a copy of it. If you edit one, update the other to match.
+- Run the tests (sandboxed, no root needed): `bash tests/test_install.sh` —
+  they fail if the embedded copy drifts from `cloudflareddns.sh`.
