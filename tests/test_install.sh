@@ -40,4 +40,21 @@ fi
 sandbox_setup
 bash install.sh > "$TMP/out.log" 2>&1 || die "install.sh should succeed in a valid sandbox"
 
+# --- DDNS script installation ---
+
+sandbox_setup
+bash install.sh > "$TMP/out.log" 2>&1 || die "install run failed"
+[ -f "$DDNS_TARGET_SCRIPT" ] || die "DDNS script was not installed"
+[ -x "$DDNS_TARGET_SCRIPT" ] || die "DDNS script is not executable"
+cmp -s "$DDNS_TARGET_SCRIPT" cloudflareddns.sh || die "embedded script drifted from cloudflareddns.sh — update the heredoc in install.sh"
+grep -q "installed: $DDNS_TARGET_SCRIPT" "$TMP/out.log" || die "first run should log 'installed:'"
+
+bash install.sh > "$TMP/out.log" 2>&1 || die "second install run failed"
+grep -q "unchanged: $DDNS_TARGET_SCRIPT" "$TMP/out.log" || die "second run should log 'unchanged:'"
+
+echo "stale" > "$DDNS_TARGET_SCRIPT"
+bash install.sh > "$TMP/out.log" 2>&1 || die "repair install run failed"
+cmp -s "$DDNS_TARGET_SCRIPT" cloudflareddns.sh || die "stale DDNS script was not repaired"
+grep -q "installed: $DDNS_TARGET_SCRIPT" "$TMP/out.log" || die "repair run should log 'installed:'"
+
 echo "ALL TESTS PASSED"
