@@ -57,4 +57,17 @@ bash install.sh > "$TMP/out.log" 2>&1 || die "repair install run failed"
 cmp -s "$DDNS_TARGET_SCRIPT" cloudflareddns.sh || die "stale DDNS script was not repaired"
 grep -q "installed: $DDNS_TARGET_SCRIPT" "$TMP/out.log" || die "repair run should log 'installed:'"
 
+# --- Provider registration ---
+
+sandbox_setup
+bash install.sh > "$TMP/out.log" 2>&1 || die "install run failed"
+grep -q "^\[Cloudflare\]" "$DDNS_PROVIDER_CONF" || die "provider entry was not added"
+grep -q "modulepath=$DDNS_TARGET_SCRIPT" "$DDNS_PROVIDER_CONF" || die "modulepath should match the target script path"
+grep -q "provider registered in: $DDNS_PROVIDER_CONF" "$TMP/out.log" || die "first run should log 'provider registered in:'"
+grep -q "^\[USER\]" "$DDNS_PROVIDER_CONF" || die "existing provider entries must be preserved"
+
+bash install.sh > "$TMP/out.log" 2>&1 || die "second install run failed"
+[ "$(grep -c "^\[Cloudflare\]" "$DDNS_PROVIDER_CONF")" -eq 1 ] || die "re-run must not duplicate the provider entry"
+grep -q "provider already present in: $DDNS_PROVIDER_CONF" "$TMP/out.log" || die "second run should log 'provider already present in:'"
+
 echo "ALL TESTS PASSED"

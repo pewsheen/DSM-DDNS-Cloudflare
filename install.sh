@@ -105,4 +105,21 @@ install_ddns_script() {
 
 install_ddns_script
 
+# --- Provider entry ---
+register_provider() {
+	if grep -q "^\[$PROVIDER_NAME\]" "$PROVIDER_CONF"; then
+		log "provider already present in: $PROVIDER_CONF"
+		return 0
+	fi
+	cat >> "$PROVIDER_CONF" << EOF
+[$PROVIDER_NAME]
+	modulepath=$TARGET_SCRIPT
+	queryurl=https://www.cloudflare.com
+	website=https://www.cloudflare.com
+EOF
+	log "provider registered in: $PROVIDER_CONF"
+}
+
+register_provider
+
 log "done."
