@@ -70,4 +70,27 @@ bash install.sh > "$TMP/out.log" 2>&1 || die "second install run failed"
 [ "$(grep -c "^\[Cloudflare\]" "$DDNS_PROVIDER_CONF")" -eq 1 ] || die "re-run must not duplicate the provider entry"
 grep -q "provider already present in: $DDNS_PROVIDER_CONF" "$TMP/out.log" || die "second run should log 'provider already present in:'"
 
+# --- Self-persist and summary ---
+
+sandbox_setup
+bash install.sh > "$TMP/out.log" 2>&1 || die "install run failed"
+[ -f "$DDNS_PERSIST_DIR/install.sh" ] || die "installer was not persisted"
+[ -x "$DDNS_PERSIST_DIR/install.sh" ] || die "persisted installer is not executable"
+cmp -s "$DDNS_PERSIST_DIR/install.sh" install.sh || die "persisted installer differs from install.sh"
+grep -q "persistent copy updated: $DDNS_PERSIST_DIR/install.sh" "$TMP/out.log" || die "first run should log 'persistent copy updated:'"
+grep -q "Task Scheduler" "$TMP/out.log" || die "summary should mention Task Scheduler setup"
+grep -q "/etc/ddns.conf" "$TMP/out.log" || die "summary should mention where credentials are stored"
+
+bash install.sh > "$TMP/out.log" 2>&1 || die "second install run failed"
+grep -q "persistent copy unchanged: $DDNS_PERSIST_DIR/install.sh" "$TMP/out.log" || die "second run should log 'persistent copy unchanged:'"
+
+# Running the persisted copy itself must also work (boot-task scenario).
+bash "$DDNS_PERSIST_DIR/install.sh" > "$TMP/out.log" 2>&1 || die "running the persisted copy failed"
+grep -q "persistent copy unchanged: $DDNS_PERSIST_DIR/install.sh" "$TMP/out.log" || die "persisted copy run should be a no-op"
+
+# Piped invocation cannot self-persist; must warn but still succeed.
+sandbox_setup
+bash < install.sh > "$TMP/out.log" 2>&1 || die "piped run should still succeed"
+grep -q "WARNING: cannot locate installer file" "$TMP/out.log" || die "piped run should warn about skipping self-persist"
+
 echo "ALL TESTS PASSED"

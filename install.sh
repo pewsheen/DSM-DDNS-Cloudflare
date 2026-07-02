@@ -122,4 +122,41 @@ EOF
 
 register_provider
 
+# --- Persist the installer so a boot-up scheduled task can re-run it ---
+persist_installer() {
+	local self="${BASH_SOURCE[0]:-}"
+	if [ ! -f "$self" ]; then
+		log "WARNING: cannot locate installer file (piped invocation?); skipping self-persist"
+		return 0
+	fi
+	local dest="$PERSIST_DIR/install.sh"
+	mkdir -p "$PERSIST_DIR"
+	if [ -f "$dest" ] && cmp -s "$self" "$dest"; then
+		log "persistent copy unchanged: $dest"
+	else
+		cp "$self" "$dest"
+		log "persistent copy updated: $dest"
+	fi
+	chmod 755 "$dest"
+}
+
+persist_installer
+
 log "done."
+cat << SUMMARY
+
+One-time setup (if not done already):
+  1. DSM Control Panel > Task Scheduler > Create > Triggered Task > User-defined script
+       User:    root
+       Event:   Boot-up
+       Command: bash $PERSIST_DIR/install.sh
+     This reapplies the script and provider entry after every DSM update + reboot.
+  2. DSM Control Panel > External Access > DDNS > Add
+       Service provider: $PROVIDER_NAME
+       Hostname:         your record, e.g. www.example.com
+       Username/Email:   your Cloudflare Zone ID
+       Password:         a Cloudflare API token with Zone > DNS > Edit
+
+Note: credentials entered in the DDNS UI are stored in /etc/ddns.conf, which
+survives DSM updates — only the script and provider entry get wiped.
+SUMMARY
