@@ -91,8 +91,9 @@ DDNS_SCRIPT_EOF
 
 install_ddns_script() {
 	local tmp
-	tmp="$(mktemp)"
+	tmp="$(mktemp "$(dirname "$TARGET_SCRIPT")/.cloudflareddns.XXXXXX")"
 	write_ddns_script > "$tmp"
+	chmod 755 "$tmp"
 	if [ -f "$TARGET_SCRIPT" ] && cmp -s "$tmp" "$TARGET_SCRIPT"; then
 		rm -f "$tmp"
 		log "unchanged: $TARGET_SCRIPT"
